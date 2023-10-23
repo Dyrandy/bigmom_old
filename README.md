@@ -1,2 +1,2 @@
-# bigmom
+# BigMom
 Caido GraphQL Client Tool
