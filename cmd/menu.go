@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func PrintLogo() {
+func printLogo() {
 	logo := `
    Welcome To BigMom, Caido-GraphQL-Client
       ____  _       __  ___              
@@ -17,7 +17,7 @@ func PrintLogo() {
 	fmt.Println(logo)
 }
 
-func PrintMenu() {
+func printMenu() {
 	fmt.Println("[0] Get Project Information")
 	fmt.Println("[1] Use Project")
 }

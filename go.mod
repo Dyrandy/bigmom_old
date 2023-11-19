@@ -1,4 +1,4 @@
-module bigmom
+module github.com/Dyrandy/bigmom
 
 go 1.20
 
