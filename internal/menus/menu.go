@@ -1,6 +1,10 @@
-package main
+package menus
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"os/exec"
+)
 
 func printLogo() {
 	logo := `
@@ -17,7 +21,17 @@ func printLogo() {
 	fmt.Println(logo)
 }
 
-func printMenu() {
-	fmt.Println("[0] Get Project Information")
-	fmt.Println("[1] Use Project")
+func PrintMenu() {
+	fmt.Println("[Q] Quit    [W] Init Settings    [E] Fuzz Target     [R] Vuln Testing")
+}
+
+func PrintAttackMenu() {
+	fmt.Println("[Q] Quit    [W] XSS    [E] Brute Force     [R] Race Condition")
+}
+
+func Logo() {
+	cmd := exec.Command("clear")
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+	printLogo()
 }

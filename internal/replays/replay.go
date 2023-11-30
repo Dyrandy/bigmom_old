@@ -5,20 +5,26 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
-	"strconv"
+	"strings"
 
+	"github.com/Dyrandy/bigmom/internal/menus"
+	"github.com/Dyrandy/bigmom/internal/scanner"
 	"github.com/machinebox/graphql"
 )
 
 func GetProjectReplaySessions(client *graphql.Client) {
 	query := `
-	query{
-		replaySessions{
-		  nodes{
-			name
-		  }
+	query {
+		replaySessionCollections{
+			nodes{
+        name
+        sessions{
+          name
+          id 
+        } 
+      }
 		}
-	  }
+	}
 	`
 	request := graphql.NewRequest(query)
 	request.Header.Set("Authorization", "Bearer "+os.Getenv("CAIDO_AUTH_TOKEN"))
@@ -28,26 +34,41 @@ func GetProjectReplaySessions(client *graphql.Client) {
 	if err != nil {
 		panic(err)
 	}
-	for index, el := range response.ReplaySessions.Nodes {
-		fmt.Println("["+strconv.Itoa(index+1)+"] ", el.Name)
+	for _, el := range response.ReplaySessionCollections.Nodes {
+		fmt.Println("[*]", el.Name)
+		printBar(236)
+		fmt.Printf("\n|%4s |%12s |%8s |%40s |%5s |%77s |%70s |\n", "Idx", "Session Name", "Method", "Host", "Port", "Path", "Query")
+		printBar(236)
+		for _, el2 := range el.Sessions {
+			getReplaySessionData(client, el2.ID, el2.Name, false)
+			// fmt.Println(el2.ID, el2.Name)
+		}
 	}
+	var choose string
+	fmt.Printf("\n\n > Which Session ID to Attack : ")
+	fmt.Scanln(&choose)
+	getReplaySessionData(client, choose, "Nothing", true)
 }
 
-func GetReplaySessionData(client *graphql.Client, id string) {
+func getReplaySessionData(client *graphql.Client, id string, sessionName string, isForTarget bool) {
 	query := `
 	query{
 		replaySession(id: "` + id + `"){
-		  name
-		  entries{
-			nodes{
+			name
+			activeEntry{
 			  request{
 				host
 				path
+				method
 				query
 				raw
+				isTls
+				fileExtension
+				source
+				port
+		  
 			  }
 			}
-		  }
 		}
 	  }
 	`
@@ -59,35 +80,60 @@ func GetReplaySessionData(client *graphql.Client, id string) {
 	if err != nil {
 		panic(err)
 	}
-
-	for index, el := range response.ReplaySession.Entries.Nodes {
-		// fmt.Println(index, el)
+	el := response.ReplaySession.ActiveEntry
+	if isForTarget != true {
+		fmt.Printf("\n|%4s |%12s |%8s |%40s |%5d |%77s |%70s |", id, sessionName, el.Request.Method, el.Request.Host, el.Request.Port, el.Request.Path, el.Request.Query)
+	} else {
 		base64Test, err2 := base64.StdEncoding.DecodeString(el.Request.Raw)
 		if err2 != nil {
 			panic(err2)
 		}
-		fmt.Printf("\n[%d]  Request Session\n%s\n", index, base64Test)
-		// fmt.Println(index, base64Test)
-	}
-}
+		menus.Logo()
+		fmt.Printf("[*] %s\n", response.ReplaySession.Name)
+		printBar(130)
+		fmt.Printf("\n%s\n", base64Test)
+		printBar(130)
+		fmt.Println()
+		menus.PrintAttackMenu()
 
-type QueryProjectSessionsResponse struct {
-	ReplaySessions struct {
-		Nodes []struct {
-			Name string
+		var choose string
+		fmt.Printf("\n > Which Attack to Perform : ")
+		fmt.Scanln(&choose)
+
+		switch strings.ToUpper(choose) {
+		case "Q":
+			return
+		case "W":
+			fmt.Println("Not Implemented Yet")
+			return
+		case "E":
+			fmt.Println("Not Implemented Yet")
+			return
+		case "R":
+			scanner.DoRaceAttack(el.Request.Raw, el.Request.Method, el.Request.Host, el.Request.Path, el.Request.Query, el.Request.IsTLS)
+		default:
+			fmt.Println("Wrong Choice")
+			return
 		}
 	}
+
+	// for _, el := range response.ReplaySession.ActiveEntry.Request {
+	// fmt.Println(index, el)
+	// base64Test, err2 := base64.StdEncoding.DecodeString(el.Request.Raw)
+	// if err2 != nil {
+	// 	panic(err2)
+	// }
+	// fmt.Printf("\n[%d]  Request Session\n%s\n", index, base64Test)
+
+	// fmt.Println(el.Request.Host, el.Request.Path, el.Request.Query)
+	// }
+	// fmt.Println()
+	// printBar()
+	// fmt.Println()
 }
 
-type QueryProjectReplayDataResponse struct {
-	ReplaySession struct {
-		Name    string
-		Entries struct {
-			Nodes []struct {
-				Request struct {
-					Raw string
-				}
-			}
-		}
+func printBar(length int) {
+	for i := 0; i < length; i++ {
+		fmt.Printf("%s", "-")
 	}
 }
